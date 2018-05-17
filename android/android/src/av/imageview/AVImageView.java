@@ -229,8 +229,8 @@ public class AVImageView extends TiUIView {
 		DrawableRequestBuilder drawableRequestBuilder;
 		GifRequestBuilder gifRequestBuilder;
 
-        Drawable defaultImageDrawable = (this.defaultImage != null) ? TiDrawableReference.fromUrl(proxy, this.defaultImage).getDrawable() : null;
-        Drawable brokenLinkImageDrawable = (this.brokenImage != null) ? TiDrawableReference.fromUrl(proxy, this.brokenImage).getDrawable() : null;
+        Drawable defaultImageDrawable = (this.defaultImage != null) ? TiDrawableReference.fromUrl(this.proxy, this.defaultImage).getDrawable() : null;
+        Drawable brokenLinkImageDrawable = (this.brokenImage != null) ? TiDrawableReference.fromUrl(this.proxy, this.brokenImage).getDrawable() : null;
 
 		if (this.loadingIndicator)
         	this.progressBar.setVisibility(View.VISIBLE);
@@ -320,34 +320,38 @@ public class AVImageView extends TiUIView {
     }
 
 	private boolean handleException(Exception e) {
-		Log.w(LCAT, source+": resource not loaded.");
+		Log.w(LCAT, this.source+": resource not loaded.");
 		Log.w(LCAT, (e != null) ? e.getMessage() : "No detailed message available.");
 
-		if (progressBar.getVisibility() == View.VISIBLE)
-			progressBar.setVisibility(View.INVISIBLE);
+		if (this.progressBar.getVisibility() == View.VISIBLE)
+			this.progressBar.setVisibility(View.INVISIBLE);
 
-		if (proxy.hasListeners("error")) {
+		if (this.proxy.hasListeners("error")) {
 			KrollDict payload = new KrollDict();
 
-			payload.put("image", source);
+			payload.put("image", this.source);
 			payload.put("reason", e.getMessage());
 
-			proxy.fireEvent("error", payload);
+			this.proxy.fireEvent("error", payload);
 		}
 
 		return false;
 	}
 
-	private boolean handleResourceReady() {
-		if (progressBar.getVisibility() == View.VISIBLE)
-			progressBar.setVisibility(View.INVISIBLE);
+	private boolean handleResourceReady(Drawable resource) {
+		if (this.progressBar.getVisibility() == View.VISIBLE)
+			this.progressBar.setVisibility(View.INVISIBLE);
 
-		if (proxy.hasListeners("load")) {
+		if (this.proxy.hasListeners("load")) {
 			KrollDict payload = new KrollDict();
 
-			payload.put("image", source);
+			payload.put("image", this.source);
+			if (resource != null) {
+				payload.put("width", resource.getIntrinsicWidth());
+				payload.put("height", resource.getIntrinsicHeight());
+			}
 
-			proxy.fireEvent("load", payload);
+			this.proxy.fireEvent("load", payload);
 		}
 
 		return false;
@@ -445,7 +449,7 @@ public class AVImageView extends TiUIView {
 
 						@Override
 						public boolean onResourceReady(GifDrawable resource, String model, Target<GifDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
-							return handleResourceReady();
+							return handleResourceReady(resource);
 						}
 					};
 
@@ -457,7 +461,7 @@ public class AVImageView extends TiUIView {
 
                     @Override
                     public boolean onResourceReady(GifDrawable resource, GlideUrl model, Target<GifDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
-                        return handleResourceReady();
+                        return handleResourceReady(resource);
                     }
                 };
             }
@@ -471,7 +475,7 @@ public class AVImageView extends TiUIView {
 
 					@Override
 					public boolean onResourceReady(GlideDrawable resource, String model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
-						return handleResourceReady();
+						return handleResourceReady(resource);
 					}
 				};
 
@@ -485,7 +489,7 @@ public class AVImageView extends TiUIView {
 
                 @Override
                 public boolean onResourceReady(GlideDrawable resource, GlideUrl model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
-					handleResourceReady();
+					handleResourceReady(resource);
 
                     return false;
                 }
